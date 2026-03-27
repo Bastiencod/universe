@@ -83,18 +83,22 @@
           <div class="server-info">
             <div class="info-row">
               <span class="info-label">IP</span>
-              <span class="info-val" id="server-ip">play.collegeun.fr</span>
-              <button class="copy-btn" onclick="copyIP()">Copier</button>
+              <span class="info-val" id="server-ip">node01.universe-gmod.fr</span>
+              <button class="copy-btn" type="button" data-copy-server>Copier</button>
             </div>
             <div class="info-row">
               <span class="info-label">PORT</span>
-              <span class="info-val" id="server-port">27015</span>
+              <span class="info-val" id="server-port">25000</span>
             </div>
           </div>
         </div>
-        <a href="steam://connect/play.collegeun.fr:27015" class="btn-primary btn-big">
+        <a href="steam://connect/node01.universe-gmod.fr:25000" class="btn-primary btn-big" data-server-connect>
           🎮 REJOINDRE LE SERVEUR
         </a>
+        <div class="hero-actions">
+          <button class="btn-secondary" type="button" data-copy-server>COPIER node01.universe-gmod.fr:25000</button>
+        </div>
+        <p class="hero-note">Connexion directe Steam disponible via l'adresse <span data-server-address>node01.universe-gmod.fr:25000</span>.</p>
       </div>
     </section>
 
@@ -334,10 +338,13 @@
         <div class="server-details-card">
           <h3>Connexion</h3>
           <div class="detail-row">
-            <span>IP</span><code id="s-ip">play.collegeun.fr</code>
+            <span>IP</span><code id="s-ip">node01.universe-gmod.fr</code>
           </div>
           <div class="detail-row">
-            <span>Port</span><code id="s-port">27015</code>
+            <span>Port</span><code id="s-port">25000</code>
+          </div>
+          <div class="detail-row">
+            <span>Adresse</span><code data-server-address>node01.universe-gmod.fr:25000</code>
           </div>
           <div class="detail-row">
             <span>Jeu</span><code>Garry's Mod</code>
@@ -345,9 +352,13 @@
           <div class="detail-row">
             <span>Statut</span><code class="green">En ligne ✓</code>
           </div>
-          <a href="steam://connect/play.collegeun.fr:27015" class="btn-primary" style="margin-top:1.5rem;display:block;text-align:center;">
+          <a href="steam://connect/node01.universe-gmod.fr:25000" class="btn-primary" style="margin-top:1.5rem;display:block;text-align:center;" data-server-connect>
             🎮 Rejoindre
           </a>
+          <div class="server-actions">
+            <button class="btn-secondary" type="button" data-copy-server>COPIER L'ADRESSE</button>
+          </div>
+          <p class="server-note">Si Steam ne s'ouvre pas automatiquement, lance Garry's Mod puis connecte-toi a <code data-server-address>node01.universe-gmod.fr:25000</code>.</p>
         </div>
 
         <div class="rules-card">

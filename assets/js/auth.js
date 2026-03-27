@@ -1,16 +1,14 @@
 /**
- * auth.js — Système d'authentification côté client
+ * auth.js - Systeme d'authentification cote client
  * Utilise SHA-256 pour comparer le mot de passe avec config.json
  *
- * ⚠️  SÉCURITÉ : Cette protection est client-side uniquement.
- *     Elle empêche l'accès casual mais un utilisateur avancé
- *     peut contourner via les DevTools. Pour une vraie sécurité,
- *     utilisez un backend (PHP, Node.js, etc.)
+ * Securite: Cette protection est client-side uniquement.
+ * Elle empeche l'acces casual mais un utilisateur avance
+ * peut contourner via les DevTools. Pour une vraie securite,
+ * utilisez un backend (PHP, Node.js, etc.)
  */
 
 const SESSION_KEY = 'cu_auth_v1';
-
-// ── SHA-256 en pur JS (Web Crypto API) ──────────────────────────
 
 async function sha256(message) {
   const msgBuffer = new TextEncoder().encode(message);
@@ -19,39 +17,60 @@ async function sha256(message) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ── Chargement de la config ──────────────────────────────────────
-
 let siteConfig = null;
+
+function applySiteConfig() {
+  if (!siteConfig) return;
+
+  if (siteConfig.server_ip) {
+    document.querySelectorAll('#server-ip, #s-ip').forEach(el => {
+      el.textContent = siteConfig.server_ip;
+    });
+  }
+
+  if (siteConfig.server_port) {
+    document.querySelectorAll('#server-port, #s-port').forEach(el => {
+      el.textContent = siteConfig.server_port;
+    });
+  }
+
+  if (siteConfig.server_ip && siteConfig.server_port) {
+    const serverAddress = `${siteConfig.server_ip}:${siteConfig.server_port}`;
+    document.querySelectorAll('[data-server-address]').forEach(el => {
+      el.textContent = serverAddress;
+    });
+    document.querySelectorAll('[data-server-connect]').forEach(el => {
+      el.setAttribute('href', `steam://connect/${serverAddress}`);
+    });
+  }
+
+  if (siteConfig.site_title) {
+    document.title = siteConfig.site_title;
+  }
+}
 
 async function loadConfig() {
   try {
     const res = await fetch('data/config.json?v=' + Date.now());
     siteConfig = await res.json();
-    // Appliquer les infos du serveur
-    if (siteConfig.server_ip) {
-      document.querySelectorAll('#server-ip, #s-ip').forEach(el => el.textContent = siteConfig.server_ip);
-    }
-    if (siteConfig.server_port) {
-      document.querySelectorAll('#server-port, #s-port').forEach(el => el.textContent = siteConfig.server_port);
-    }
-    if (siteConfig.site_title) {
-      document.title = siteConfig.site_title;
-    }
   } catch (e) {
     console.warn('[Auth] Impossible de charger config.json:', e);
-    siteConfig = { password_hash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918' };
+    siteConfig = {
+      password_hash: '9e12c82b183980189d24ee1db190423bc76d46479a380526d42458ec00ec73c0',
+      server_ip: 'node01.universe-gmod.fr',
+      server_port: '25000',
+      site_title: 'College Universe - GMod Server'
+    };
   }
-}
 
-// ── Vérification du mot de passe ────────────────────────────────
+  applySiteConfig();
+}
 
 async function checkPassword(password) {
   if (!siteConfig) await loadConfig();
   const hash = await sha256(password);
   return hash === siteConfig.password_hash;
 }
-
-// ── Session ─────────────────────────────────────────────────────
 
 function isAuthenticated() {
   return sessionStorage.getItem(SESSION_KEY) === 'true';
@@ -65,8 +84,6 @@ function setSession(value) {
   }
 }
 
-// ── UI ───────────────────────────────────────────────────────────
-
 function showSite() {
   const loginScreen = document.getElementById('login-screen');
   const mainSite = document.getElementById('main-site');
@@ -75,7 +92,7 @@ function showSite() {
   loginScreen.style.opacity = '0';
   loginScreen.style.transform = 'scale(1.02)';
 
-  setTimeout(() => {
+  window.setTimeout(() => {
     loginScreen.classList.add('hidden');
     mainSite.classList.remove('hidden');
     mainSite.style.opacity = '0';
@@ -96,18 +113,14 @@ function showLogin() {
   document.getElementById('login-error').textContent = '';
 }
 
-// ── Event Listeners ──────────────────────────────────────────────
-
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
 
-  // Vérifier session existante
   if (isAuthenticated()) {
     showSite();
     return;
   }
 
-  // Bouton login
   const loginBtn = document.getElementById('login-btn');
   const passwordInput = document.getElementById('password');
   const errorMsg = document.getElementById('login-error');
@@ -115,33 +128,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function attemptLogin() {
     const pw = passwordInput.value.trim();
     if (!pw) {
-      errorMsg.textContent = '⚠ Veuillez entrer un mot de passe';
+      errorMsg.textContent = 'Veuillez entrer un mot de passe';
       passwordInput.focus();
       return;
     }
 
     loginBtn.disabled = true;
-    loginBtn.querySelector('.btn-text').textContent = 'VÉRIFICATION...';
+    loginBtn.querySelector('.btn-text').textContent = 'VERIFICATION...';
     errorMsg.textContent = '';
 
-    // Petit délai pour éviter les attaques par timing
-    await new Promise(r => setTimeout(r, 400 + Math.random() * 200));
+    await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 200));
 
     const valid = await checkPassword(pw);
 
     if (valid) {
       setSession(true);
-      loginBtn.querySelector('.btn-text').textContent = 'ACCÈS ACCORDÉ ✓';
+      loginBtn.querySelector('.btn-text').textContent = 'ACCES ACCORDE';
       loginBtn.style.borderColor = '#39ff84';
       loginBtn.style.color = '#39ff84';
-      setTimeout(showSite, 600);
+      window.setTimeout(showSite, 600);
     } else {
       loginBtn.disabled = false;
-      loginBtn.querySelector('.btn-text').textContent = 'ACCÉDER';
-      errorMsg.textContent = '✕ Mot de passe incorrect';
+      loginBtn.querySelector('.btn-text').textContent = 'ACCEDER';
+      errorMsg.textContent = 'Mot de passe incorrect';
       passwordInput.style.borderColor = '#ff4d6d';
       passwordInput.style.boxShadow = '0 0 0 3px rgba(255,77,109,0.1)';
-      setTimeout(() => {
+      window.setTimeout(() => {
         passwordInput.style.borderColor = '';
         passwordInput.style.boxShadow = '';
         errorMsg.textContent = '';
@@ -156,15 +168,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Enter') attemptLogin();
   });
 
-  // Toggle visibilité mot de passe
   const toggleBtn = document.getElementById('toggle-pw');
   toggleBtn.addEventListener('click', () => {
     const isText = passwordInput.type === 'text';
     passwordInput.type = isText ? 'password' : 'text';
-    toggleBtn.textContent = isText ? '👁' : '🙈';
+    toggleBtn.textContent = isText ? 'Voir' : 'Masquer';
   });
 
-  // Déconnexion
   document.getElementById('logout-btn').addEventListener('click', () => {
     setSession(false);
     showLogin();

@@ -1,41 +1,62 @@
 /**
- * main.js — Navigation et utilitaires généraux
+ * main.js - Navigation et utilitaires generaux
  */
 
-// ── Copie de l'IP ────────────────────────────────────────────────
-
-function copyIP() {
-  const ip = document.getElementById('server-ip').textContent;
-  const port = document.getElementById('server-port').textContent;
-  const full = `${ip}:${port}`;
-
-  navigator.clipboard.writeText(full).then(() => {
-    const btn = document.querySelector('.copy-btn');
-    const orig = btn.textContent;
-    btn.textContent = '✓ Copié !';
-    btn.style.color = '#39ff84';
-    btn.style.borderColor = '#39ff84';
-    setTimeout(() => {
-      btn.textContent = orig;
-      btn.style.color = '';
-      btn.style.borderColor = '';
-    }, 2000);
-  }).catch(() => {
-    // Fallback pour navigateurs anciens
-    const el = document.createElement('textarea');
-    el.value = full;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
-  });
+function getServerAddress() {
+  const ip = document.getElementById('server-ip')?.textContent?.trim();
+  const port = document.getElementById('server-port')?.textContent?.trim();
+  if (!ip || !port) return '';
+  return `${ip}:${port}`;
 }
 
-// ── Navigation active au scroll ──────────────────────────────────
+function flashCopyState(button, label) {
+  if (!button) return;
+  const originalLabel = button.dataset.label || button.textContent;
+  button.dataset.label = originalLabel;
+  button.textContent = label;
+  button.style.color = '#39ff84';
+  button.style.borderColor = '#39ff84';
+
+  window.setTimeout(() => {
+    button.textContent = originalLabel;
+    button.style.color = '';
+    button.style.borderColor = '';
+  }, 2000);
+}
+
+function legacyCopy(text) {
+  const el = document.createElement('textarea');
+  el.value = text;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+}
+
+function copyIP(button = document.querySelector('.copy-btn')) {
+  const full = getServerAddress();
+  if (!full) return;
+
+  navigator.clipboard.writeText(full).then(() => {
+    flashCopyState(button, 'OK COPIE');
+  }).catch(() => {
+    legacyCopy(full);
+    flashCopyState(button, 'OK COPIE');
+  });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const sections = document.querySelectorAll('.section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
+  const currentYear = document.getElementById('current-year');
+
+  if (currentYear) {
+    currentYear.textContent = new Date().getFullYear();
+  }
+
+  document.querySelectorAll('[data-copy-server]').forEach(button => {
+    button.addEventListener('click', () => copyIP(button));
+  });
 
   function updateActiveNav() {
     let current = '';
@@ -55,8 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('scroll', updateActiveNav, { passive: true });
+  updateActiveNav();
 
-  // Smooth scroll pour les liens de navigation
   navLinks.forEach(link => {
     link.addEventListener('click', e => {
       const target = document.querySelector(link.getAttribute('href'));
@@ -77,8 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
-// ── Effet de particules sur le hero (optionnel) ──────────────────
 
 function initParticles() {
   const hero = document.querySelector('.hero-section');
@@ -101,9 +120,9 @@ function initParticles() {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes float${i} {
-        0%,100% { transform: translateY(0) translateX(0); opacity:${0.3 + Math.random()*0.4}; }
-        33% { transform: translateY(${-20 - Math.random()*40}px) translateX(${-10 + Math.random()*20}px); }
-        66% { transform: translateY(${-10 - Math.random()*20}px) translateX(${-15 + Math.random()*30}px); }
+        0%,100% { transform: translateY(0) translateX(0); opacity:${0.3 + Math.random() * 0.4}; }
+        33% { transform: translateY(${-20 - Math.random() * 40}px) translateX(${-10 + Math.random() * 20}px); }
+        66% { transform: translateY(${-10 - Math.random() * 20}px) translateX(${-15 + Math.random() * 30}px); }
       }
     `;
     document.head.appendChild(style);

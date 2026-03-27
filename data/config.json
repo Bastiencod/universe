@@ -1,8 +1,8 @@
 {
-  "password_hash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
-  "_comment": "Default password is 'admin' — change this SHA-256 hash to your own password",
+  "password_hash": "9e12c82b183980189d24ee1db190423bc76d46479a380526d42458ec00ec73c0",
+  "_comment": "Default password is 'Universe2026!' - change this SHA-256 hash to your own password",
   "_how_to_change": "Go to https://emn178.github.io/online-tools/sha256.html and hash your new password, then replace the value above",
-  "site_title": "Collège Universe — GMod Server",
-  "server_ip": "play.collegeun.fr",
-  "server_port": "27015"
+  "site_title": "College Universe - GMod Server",
+  "server_ip": "node01.universe-gmod.fr",
+  "server_port": "25000"
 }

@@ -243,6 +243,29 @@ body {
 
 .btn-primary:active { transform: scale(0.98); }
 
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,229,255,0.06);
+}
+
 .btn-glow {
   position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, rgba(0,229,255,0.1), transparent);
@@ -515,6 +538,25 @@ body {
   margin-top: 0.5rem;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+}
+
+.hero-note {
+  margin-top: 1rem;
+  color: var(--text2);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+}
+
+.hero-note [data-server-address] {
+  color: var(--accent);
+}
+
 /* ── UPLOAD ── */
 
 .upload-section { background: var(--bg2); }
@@ -763,6 +805,18 @@ body {
 }
 .detail-row code.green { color: var(--green); }
 
+.server-actions {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+}
+
+.server-note {
+  margin-top: 1rem;
+  color: var(--text2);
+  font-size: 0.8rem;
+}
+
 .rules-list {
   padding-left: 1.2rem;
   display: flex; flex-direction: column; gap: 0.6rem;
@@ -857,6 +911,10 @@ body {
   .links-grid { grid-template-columns: 1fr; }
   .footer { padding: 1.5rem; }
   .footer-content { flex-direction: column; text-align: center; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary,
+  .server-actions .btn-secondary { width: 100% !important; }
 }
 
 /* ── UPLOAD DRAG ACTIVE ── */
