@@ -90,6 +90,35 @@ async function dropboxRequest(endpoint, body, options = {}) {
   return response.json();
 }
 
+function parseDropboxError(error) {
+  try {
+    return JSON.parse(error.message);
+  } catch {
+    return null;
+  }
+}
+
+async function ensureDropboxRootExists() {
+  try {
+    await dropboxRequest('files/list_folder', {
+      path: dropboxState.root,
+      recursive: false,
+      include_deleted: false,
+      include_has_explicit_shared_members: false,
+      include_mounted_folders: true
+    });
+  } catch (error) {
+    const parsed = parseDropboxError(error);
+    const notFound = parsed?.error?.['.tag'] === 'path' && parsed?.error?.path?.['.tag'] === 'not_found';
+    if (!notFound) throw error;
+
+    await dropboxRequest('files/create_folder_v2', {
+      path: dropboxState.root,
+      autorename: false
+    });
+  }
+}
+
 async function connectDropbox() {
   const tokenInput = document.getElementById('dropbox-token');
   const rootInput = document.getElementById('dropbox-root');
@@ -111,12 +140,13 @@ async function connectDropbox() {
     dropboxState.accountName = profile.name.display_name;
     persistDropboxState();
     setDropboxStatus('Connecte', `${profile.name.display_name} - ${dropboxState.root}`);
+    await ensureDropboxRootExists();
     await refreshDropboxFiles();
   } catch (error) {
     console.error(error);
     dropboxState.connected = false;
     dropboxState.remoteFiles = [];
-    setDropboxStatus('Connexion echouee', 'Le token Dropbox semble invalide ou expire.');
+    setDropboxStatus('Connexion echouee', 'Dropbox a refuse la connexion ou la creation du dossier racine.');
     renderFileManager();
   }
 }
