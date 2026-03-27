@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collège Universe — GMod</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Oxanium:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- ░░░ LOGIN SCREEN ░░░ -->
+  <div id="login-screen">
+    <div class="scanline"></div>
+    <div class="login-noise"></div>
+
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-hex">
+          <svg viewBox="0 0 100 115" width="80" height="92">
+            <polygon points="50,5 95,28 95,87 50,110 5,87 5,28" fill="none" stroke="#00e5ff" stroke-width="2"/>
+            <polygon points="50,15 85,33 85,82 50,100 15,82 15,33" fill="none" stroke="#00e5ff" stroke-width="0.8" opacity="0.4"/>
+          </svg>
+          <span class="hex-letter">CU</span>
+        </div>
+      </div>
+      <h1 class="login-title">COLLÈGE UNIVERSE</h1>
+      <p class="login-sub">Zone réservée aux membres</p>
+
+      <div class="input-group">
+        <label for="password">MOT DE PASSE</label>
+        <div class="input-wrap">
+          <input type="password" id="password" placeholder="••••••••••" autocomplete="off" />
+          <button id="toggle-pw" type="button" aria-label="Voir mot de passe">👁</button>
+        </div>
+        <div class="input-bar"></div>
+      </div>
+
+      <button id="login-btn" class="btn-primary">
+        <span class="btn-text">ACCÉDER</span>
+        <span class="btn-glow"></span>
+      </button>
+
+      <div id="login-error" class="error-msg" aria-live="polite"></div>
+
+      <div class="login-footer">
+        <span class="dot"></span> GMOD SERVER — EN LIGNE
+        <span class="dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░░ MAIN SITE ░░░ -->
+  <div id="main-site" class="hidden">
+
+    <!-- NAV -->
+    <nav class="navbar">
+      <div class="nav-brand">
+        <div class="nav-hex">CU</div>
+        <span>COLLÈGE UNIVERSE</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#home" class="nav-link active">Accueil</a></li>
+        <li><a href="#upload" class="nav-link">Uploads</a></li>
+        <li><a href="#links" class="nav-link">Liens</a></li>
+        <li><a href="#server" class="nav-link">Serveur</a></li>
+      </ul>
+      <button id="logout-btn" class="btn-logout">⏻ Déconnexion</button>
+    </nav>
+
+    <!-- HOME -->
+    <section id="home" class="section hero-section">
+      <div class="hero-bg"></div>
+      <div class="grid-overlay"></div>
+      <div class="hero-content">
+        <div class="status-badge">
+          <span class="pulse-dot"></span> SERVEUR EN LIGNE
+        </div>
+        <h1 class="hero-title">COLLÈGE<br/><span class="accent">UNIVERSE</span></h1>
+        <p class="hero-sub">Le serveur Garry's Mod de la communauté.<br/>Construis. Explore. Joue.</p>
+        <div class="server-card">
+          <div class="server-info">
+            <div class="info-row">
+              <span class="info-label">IP</span>
+              <span class="info-val" id="server-ip">play.collegeun.fr</span>
+              <button class="copy-btn" onclick="copyIP()">Copier</button>
+            </div>
+            <div class="info-row">
+              <span class="info-label">PORT</span>
+              <span class="info-val" id="server-port">27015</span>
+            </div>
+          </div>
+        </div>
+        <a href="steam://connect/play.collegeun.fr:27015" class="btn-primary btn-big">
+          🎮 REJOINDRE LE SERVEUR
+        </a>
+      </div>
+    </section>
+
+    <!-- UPLOAD -->
+    <section id="upload" class="section upload-section">
+      <div class="section-header">
+        <h2 class="section-title">📁 UPLOADS</h2>
+        <p class="section-sub">Partagez des addons, maps, et ressources pour le serveur</p>
+      </div>
+
+      <div class="upload-grid">
+
+        <div class="upload-card">
+          <div class="upload-icon">🗺️</div>
+          <h3>Maps</h3>
+          <p>Upload une map (.bsp) pour le serveur GMod</p>
+          <label class="upload-area" id="map-drop">
+            <input type="file" accept=".bsp,.zip" class="file-input" data-type="map" />
+            <div class="drop-content">
+              <span class="drop-icon">⬆️</span>
+              <span>Glisse ou clique pour uploader</span>
+              <span class="drop-hint">.bsp, .zip — max 100MB</span>
+            </div>
+          </label>
+          <div class="file-list" id="map-list"></div>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-icon">🔧</div>
+          <h3>Addons</h3>
+          <p>Addons Lua, props, ou packs de contenu</p>
+          <label class="upload-area" id="addon-drop">
+            <input type="file" accept=".zip,.gma" class="file-input" data-type="addon" />
+            <div class="drop-content">
+              <span class="drop-icon">⬆️</span>
+              <span>Glisse ou clique pour uploader</span>
+              <span class="drop-hint">.zip, .gma — max 100MB</span>
+            </div>
+          </label>
+          <div class="file-list" id="addon-list"></div>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-icon">🖼️</div>
+          <h3>Textures & Materials</h3>
+          <p>Packs de textures VTF/VMT</p>
+          <label class="upload-area" id="tex-drop">
+            <input type="file" accept=".zip,.vtf,.vmt" class="file-input" data-type="texture" />
+            <div class="drop-content">
+              <span class="drop-icon">⬆️</span>
+              <span>Glisse ou clique pour uploader</span>
+              <span class="drop-hint">.zip, .vtf, .vmt — max 100MB</span>
+            </div>
+          </label>
+          <div class="file-list" id="tex-list"></div>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-icon">📄</div>
+          <h3>Autres fichiers</h3>
+          <p>Configs, scripts, documentation</p>
+          <label class="upload-area" id="misc-drop">
+            <input type="file" class="file-input" data-type="misc" />
+            <div class="drop-content">
+              <span class="drop-icon">⬆️</span>
+              <span>Glisse ou clique pour uploader</span>
+              <span class="drop-hint">Tout format — max 50MB</span>
+            </div>
+          </label>
+          <div class="file-list" id="misc-list"></div>
+        </div>
+
+      </div>
+
+      <div class="upload-note">
+        <span>⚠️</span>
+        <p>Les fichiers sont stockés localement dans votre navigateur. Pour un vrai partage, configurez un service externe (Google Drive, Dropbox) dans <code>assets/js/upload.js</code>.</p>
+      </div>
+    </section>
+
+    <!-- LINKS -->
+    <section id="links" class="section links-section">
+      <div class="section-header">
+        <h2 class="section-title">🔗 LIENS UTILES</h2>
+        <p class="section-sub">Tous les outils essentiels pour le développement et le jeu</p>
+      </div>
+
+      <div class="links-grid">
+
+        <div class="link-category">
+          <h3 class="cat-title">🛠️ Outils de mapping</h3>
+          <div class="link-cards">
+            <a href="https://ficool2.github.io/HammerAddons-website/hammer_pp.html" target="_blank" class="link-card featured">
+              <div class="lc-icon">🔨</div>
+              <div class="lc-info">
+                <strong>Hammer++</strong>
+                <span>Éditeur de maps amélioré — indispensable</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://developer.valvesoftware.com/wiki/Hammer_Editor" target="_blank" class="link-card">
+              <div class="lc-icon">📖</div>
+              <div class="lc-info">
+                <strong>Hammer Wiki (Valve)</strong>
+                <span>Documentation officielle de Hammer</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://ficool2.github.io/HammerAddons-website/" target="_blank" class="link-card">
+              <div class="lc-icon">➕</div>
+              <div class="lc-info">
+                <strong>Hammer Addons</strong>
+                <span>Extensions pour Hammer / BSPEdit</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://www.tophattwaffle.com/compiling-vmf/" target="_blank" class="link-card">
+              <div class="lc-icon">⚙️</div>
+              <div class="lc-info">
+                <strong>Guide de compilation</strong>
+                <span>Compiler une map correctement</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="link-category">
+          <h3 class="cat-title">🎮 Garry's Mod</h3>
+          <div class="link-cards">
+            <a href="https://wiki.facepunch.com/gmod/" target="_blank" class="link-card featured">
+              <div class="lc-icon">📚</div>
+              <div class="lc-info">
+                <strong>Wiki GMod (Facepunch)</strong>
+                <span>Documentation officielle Lua/GMod</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://steamcommunity.com/app/4000/workshop/" target="_blank" class="link-card">
+              <div class="lc-icon">🏪</div>
+              <div class="lc-info">
+                <strong>Steam Workshop</strong>
+                <span>Addons communautaires GMod</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://www.gmodstore.com/" target="_blank" class="link-card">
+              <div class="lc-icon">💾</div>
+              <div class="lc-info">
+                <strong>GmodStore</strong>
+                <span>Addons premium et scripts Lua</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://github.com/garrynewman/garrysmod" target="_blank" class="link-card">
+              <div class="lc-icon">🐙</div>
+              <div class="lc-info">
+                <strong>GMod GitHub</strong>
+                <span>Source officielle de Garry's Mod</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="link-category">
+          <h3 class="cat-title">🖼️ Assets & Textures</h3>
+          <div class="link-cards">
+            <a href="https://www.textures.com/" target="_blank" class="link-card">
+              <div class="lc-icon">🎨</div>
+              <div class="lc-info">
+                <strong>Textures.com</strong>
+                <span>Bibliothèque de textures gratuite</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://ambientcg.com/" target="_blank" class="link-card featured">
+              <div class="lc-icon">✨</div>
+              <div class="lc-info">
+                <strong>AmbientCG</strong>
+                <span>Textures PBR libres de droits</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://developer.valvesoftware.com/wiki/VTFEdit" target="_blank" class="link-card">
+              <div class="lc-icon">🖼️</div>
+              <div class="lc-info">
+                <strong>VTFEdit</strong>
+                <span>Convertisseur de textures VTF/VMT</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="link-category">
+          <h3 class="cat-title">🤝 Communauté</h3>
+          <div class="link-cards">
+            <a href="https://discord.gg/" target="_blank" class="link-card featured" id="discord-link">
+              <div class="lc-icon">💬</div>
+              <div class="lc-info">
+                <strong>Discord Collège Universe</strong>
+                <span>Rejoins notre serveur Discord</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://steamcommunity.com/" target="_blank" class="link-card" id="steam-group">
+              <div class="lc-icon">🎮</div>
+              <div class="lc-info">
+                <strong>Groupe Steam</strong>
+                <span>Groupe officiel de la communauté</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+            <a href="https://facepunch.com/forum" target="_blank" class="link-card">
+              <div class="lc-icon">💡</div>
+              <div class="lc-info">
+                <strong>Forum Facepunch</strong>
+                <span>Aide et discussion sur GMod</span>
+              </div>
+              <div class="lc-arrow">→</div>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SERVER -->
+    <section id="server" class="section server-section">
+      <div class="section-header">
+        <h2 class="section-title">🖥️ SERVEUR</h2>
+        <p class="section-sub">Informations et règles du serveur</p>
+      </div>
+
+      <div class="server-grid">
+        <div class="server-details-card">
+          <h3>Connexion</h3>
+          <div class="detail-row">
+            <span>IP</span><code id="s-ip">play.collegeun.fr</code>
+          </div>
+          <div class="detail-row">
+            <span>Port</span><code id="s-port">27015</code>
+          </div>
+          <div class="detail-row">
+            <span>Jeu</span><code>Garry's Mod</code>
+          </div>
+          <div class="detail-row">
+            <span>Statut</span><code class="green">En ligne ✓</code>
+          </div>
+          <a href="steam://connect/play.collegeun.fr:27015" class="btn-primary" style="margin-top:1.5rem;display:block;text-align:center;">
+            🎮 Rejoindre
+          </a>
+        </div>
+
+        <div class="rules-card">
+          <h3>📋 Règles du serveur</h3>
+          <ol class="rules-list">
+            <li>Respecter tous les joueurs — aucune discrimination tolérée</li>
+            <li>Pas de grief ni de destruction intentionnelle des constructions</li>
+            <li>Pas de cheats, exploits ou hacks</li>
+            <li>Écouter les admins et modérateurs</li>
+            <li>Rester dans le thème du serveur</li>
+            <li>Pas de spam vocal ni textuel</li>
+          </ol>
+        </div>
+
+        <div class="addons-card">
+          <h3>🔧 Addons requis</h3>
+          <p class="addons-sub">Abonne-toi à ces addons sur le Workshop pour jouer sans erreurs :</p>
+          <ul class="addons-list">
+            <li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=163057105" target="_blank">ULX Admin Mod</a></li>
+            <li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=104534948" target="_blank">Wiremod</a></li>
+            <li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=11520" target="_blank">PHX3</a></li>
+          </ul>
+          <p class="addons-note">⬆️ Modifie cette liste dans <code>index.html</code></p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-brand">COLLÈGE UNIVERSE</div>
+        <div class="footer-links">
+          <a href="#home">Accueil</a>
+          <a href="#upload">Uploads</a>
+          <a href="#links">Liens</a>
+          <a href="#server">Serveur</a>
+        </div>
+        <div class="footer-copy">© 2025 Collège Universe — Tous droits réservés</div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/upload.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
