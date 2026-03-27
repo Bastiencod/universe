@@ -456,7 +456,7 @@ button, input, select { font: inherit; }
 
 .file-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 0.85rem;
@@ -542,6 +542,26 @@ button, input, select { font: inherit; }
   font-size: 0.72rem;
   font-family: var(--font-mono);
   color: var(--muted);
+}
+
+.status-pending {
+  color: #ffd37a;
+  background: rgba(255, 211, 122, 0.08);
+}
+
+.status-uploading {
+  color: var(--accent);
+  background: rgba(85, 215, 255, 0.08);
+}
+
+.status-synced {
+  color: var(--success);
+  background: rgba(73, 240, 162, 0.08);
+}
+
+.status-error {
+  color: #ffb3bc;
+  background: rgba(255, 106, 123, 0.08);
 }
 
 .file-actions {

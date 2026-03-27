@@ -27,6 +27,15 @@ function formatDate(input) {
   return new Date(input).toLocaleString('fr-FR');
 }
 
+function statusLabel(status) {
+  switch (status) {
+    case 'uploading': return 'Upload en cours';
+    case 'synced': return 'Synchronise';
+    case 'error': return 'Erreur';
+    default: return 'En attente';
+  }
+}
+
 function escapeHtml(value) {
   const div = document.createElement('div');
   div.textContent = value;
@@ -43,6 +52,14 @@ function inferType(name) {
 
 function getLocalEntries() {
   return Object.entries(uploadedFiles).flatMap(([type, files]) => files.map(file => ({ ...file, type })));
+}
+
+function findLocalEntryById(id) {
+  for (const type of Object.keys(uploadedFiles)) {
+    const entry = uploadedFiles[type].find(file => file.id === id);
+    if (entry) return entry;
+  }
+  return null;
 }
 
 function setDropboxStatus(label, note = '') {
@@ -222,6 +239,7 @@ function renderCategoryList(type) {
     item.className = 'file-item';
     item.innerHTML = `
       <span class="file-name">${escapeHtml(file.name)}</span>
+      <span class="file-badge status-${file.status || 'pending'}">${statusLabel(file.status)}</span>
       <span class="file-size">${formatBytes(file.size)}</span>
       <button class="file-del" data-type="${type}" data-index="${index}" type="button">Suppr.</button>
     `;
@@ -239,31 +257,55 @@ function renderCategoryList(type) {
 }
 
 function updateQueueSummary() {
-  const total = getLocalEntries().length;
+  const entries = getLocalEntries();
+  const total = entries.length;
+  const uploading = entries.filter(entry => entry.status === 'uploading').length;
+  const synced = entries.filter(entry => entry.status === 'synced').length;
+  const errors = entries.filter(entry => entry.status === 'error').length;
   document.getElementById('queue-summary').textContent = total
-    ? `${total} fichier(s) local(aux) pret(s) a etre envoyes vers Dropbox.`
+    ? `${total} fichier(s) locaux. ${uploading} en cours, ${synced} synchronises, ${errors} en erreur.`
     : 'Aucun fichier local pour le moment.';
 }
 
-function handleUpload(file, type) {
+async function handleUpload(file, type) {
   const maxSize = type === 'misc' ? 50 * 1024 * 1024 : 100 * 1024 * 1024;
   if (file.size > maxSize) {
     alert(`Fichier trop volumineux: ${file.name}`);
     return;
   }
 
-  uploadedFiles[type].push({
+  const entry = {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     name: file.name,
     size: file.size,
     source: 'local',
     updatedAt: new Date(file.lastModified || Date.now()).toISOString(),
-    blob: file
-  });
+    blob: file,
+    status: dropboxState.connected ? 'uploading' : 'pending'
+  };
+
+  uploadedFiles[type].push(entry);
 
   renderCategoryList(type);
   updateQueueSummary();
   renderFileManager();
+
+  if (dropboxState.connected) {
+    try {
+      await uploadSingleFileToDropbox(entry);
+      const saved = findLocalEntryById(entry.id);
+      if (saved) saved.status = 'synced';
+      await refreshDropboxFiles();
+    } catch (error) {
+      console.error(error);
+      const saved = findLocalEntryById(entry.id);
+      if (saved) saved.status = 'error';
+    }
+
+    renderCategoryList(type);
+    updateQueueSummary();
+    renderFileManager();
+  }
 }
 
 function initUploadArea(inputEl) {
@@ -271,7 +313,7 @@ function initUploadArea(inputEl) {
   const area = inputEl.closest('.upload-area');
 
   inputEl.addEventListener('change', () => {
-    Array.from(inputEl.files || []).forEach(file => handleUpload(file, type));
+    Array.from(inputEl.files || []).forEach(file => { handleUpload(file, type); });
     inputEl.value = '';
   });
 
@@ -285,7 +327,7 @@ function initUploadArea(inputEl) {
   area.addEventListener('drop', event => {
     event.preventDefault();
     area.classList.remove('drag-over');
-    Array.from(event.dataTransfer.files || []).forEach(file => handleUpload(file, type));
+    Array.from(event.dataTransfer.files || []).forEach(file => { handleUpload(file, type); });
   });
 }
 
@@ -296,7 +338,7 @@ async function uploadSingleFileToDropbox(entry) {
 }
 
 async function syncAllToDropbox() {
-  const localEntries = getLocalEntries();
+  const localEntries = getLocalEntries().filter(entry => entry.status !== 'synced');
   if (!localEntries.length) {
     setDropboxStatus(dropboxState.connected ? 'Connecte' : 'Non connecte', 'Aucun fichier local a envoyer.');
     return;
@@ -310,13 +352,13 @@ async function syncAllToDropbox() {
 
   try {
     for (const entry of localEntries) {
+      entry.status = 'uploading';
+      renderCategoryList(entry.type);
+      updateQueueSummary();
+      renderFileManager();
       await uploadSingleFileToDropbox(entry);
+      entry.status = 'synced';
     }
-
-    Object.keys(uploadedFiles).forEach(type => {
-      uploadedFiles[type] = [];
-      renderCategoryList(type);
-    });
 
     updateQueueSummary();
     await refreshDropboxFiles();
@@ -325,6 +367,9 @@ async function syncAllToDropbox() {
     console.error(error);
     setDropboxStatus('Erreur Dropbox', 'Un envoi a echoue. Verifie le token et les permissions.');
   }
+
+  Object.keys(uploadedFiles).forEach(renderCategoryList);
+  renderFileManager();
 }
 
 async function createDropboxShareLink(path) {
@@ -341,6 +386,22 @@ async function deleteDropboxFile(path) {
   if (!dropboxState.connected) return;
   await dropboxRequest('files/delete_v2', { path });
   await refreshDropboxFiles();
+}
+
+async function getDropboxTemporaryLink(path) {
+  const result = await dropboxRequest('files/get_temporary_link', { path });
+  return result.link;
+}
+
+function downloadLocalFile(entry) {
+  const url = URL.createObjectURL(entry.blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = entry.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function renderFileManager() {
@@ -387,9 +448,13 @@ function renderFileManager() {
       <td>
         <div class="file-actions">
           ${entry.source === 'local'
-            ? `<button class="table-action" data-action="copy-name" data-name="${escapeHtml(entry.name)}" type="button">Copier nom</button>`
+            ? `
+              <button class="table-action" data-action="copy-name" data-id="${entry.id}" data-name="${escapeHtml(entry.name)}" type="button">Copier nom</button>
+              <button class="table-action" data-action="download-local" data-id="${entry.id}" type="button">Download</button>
+            `
             : `
               <button class="table-action" data-action="copy-path" data-path="${escapeHtml(entry.path)}" type="button">Copier path</button>
+              <button class="table-action" data-action="download-remote" data-path="${escapeHtml(entry.path)}" type="button">Download</button>
               <button class="table-action" data-action="share" data-path="${escapeHtml(entry.path)}" type="button">Lien</button>
               <button class="table-action danger" data-action="delete-remote" data-path="${escapeHtml(entry.path)}" type="button">Supprimer</button>
             `}
@@ -404,7 +469,15 @@ function renderFileManager() {
       const action = button.dataset.action;
       try {
         if (action === 'copy-name') copyText(button.dataset.name, button, 'Nom copie');
+        if (action === 'download-local') {
+          const entry = findLocalEntryById(button.dataset.id);
+          if (entry) downloadLocalFile(entry);
+        }
         if (action === 'copy-path') copyText(button.dataset.path, button, 'Path copie');
+        if (action === 'download-remote') {
+          const url = await getDropboxTemporaryLink(button.dataset.path);
+          window.open(url, '_blank', 'noopener');
+        }
         if (action === 'share') copyText(await createDropboxShareLink(button.dataset.path), button, 'Lien copie');
         if (action === 'delete-remote') await deleteDropboxFile(button.dataset.path);
       } catch (error) {
