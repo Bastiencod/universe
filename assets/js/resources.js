@@ -49,6 +49,7 @@ window.RESOURCE_LINKS = [
   { category: 'GMod UI', url: 'https://wiki.facepunch.com/gmod/DNumSlider' },
   { category: 'Valve Mapping', url: 'https://developer.valvesoftware.com/wiki/Main_Page' },
   { category: 'Valve Mapping', url: 'https://developer.valvesoftware.com/wiki/Hammer_Editor' },
+  { category: 'Valve Mapping', url: 'https://ficool2.github.io/HammerPlusPlus-Website/download.html', title: 'Hammer++ Download' },
   { category: 'Valve Mapping', url: 'https://developer.valvesoftware.com/wiki/Category:Level_Design' },
   { category: 'Valve Mapping', url: 'https://developer.valvesoftware.com/wiki/Category:Programming' },
   { category: 'Valve Mapping', url: 'https://developer.valvesoftware.com/wiki/Valve_Map_Format' },
