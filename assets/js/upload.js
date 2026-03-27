@@ -78,7 +78,7 @@ async function dropboxRequest(endpoint, body, options = {}) {
     payload = options.content;
   } else {
     headers['Content-Type'] = 'application/json';
-    payload = JSON.stringify(body || {});
+    payload = JSON.stringify(body === undefined ? {} : body);
   }
 
   const response = await fetch(url, { method: 'POST', headers, body: payload });
@@ -106,7 +106,7 @@ async function connectDropbox() {
   dropboxState.root = root.startsWith('/') ? root : `/${root}`;
 
   try {
-    const profile = await dropboxRequest('users/get_current_account', {});
+    const profile = await dropboxRequest('users/get_current_account', null);
     dropboxState.connected = true;
     dropboxState.accountName = profile.name.display_name;
     persistDropboxState();
