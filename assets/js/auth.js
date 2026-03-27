@@ -21,6 +21,8 @@ let siteConfig = null;
 
 function applySiteConfig() {
   if (!siteConfig) return;
+  window.siteConfig = siteConfig;
+  document.dispatchEvent(new CustomEvent('site-config-loaded', { detail: siteConfig }));
 
   if (siteConfig.server_ip) {
     document.querySelectorAll('#server-ip, #s-ip').forEach(el => {
@@ -59,7 +61,9 @@ async function loadConfig() {
       password_hash: '9e12c82b183980189d24ee1db190423bc76d46479a380526d42458ec00ec73c0',
       server_ip: 'node01.universe-gmod.fr',
       server_port: '25000',
-      site_title: 'College Universe - GMod Server'
+      site_title: 'Universe Workspace - GMod Dev Hub',
+      dropbox_access_token: '',
+      dropbox_root_path: '/UniverseWorkspace'
     };
   }
 

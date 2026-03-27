@@ -1,13 +1,4 @@
-/**
- * upload.js — Gestion des uploads de fichiers
- *
- * GitHub Pages étant statique, les fichiers sont stockés en mémoire
- * dans cette session. Pour un vrai stockage, intégrez un service :
- *   - Cloudflare R2 / AWS S3 (remplacer handleUpload)
- *   - Google Drive API
- *   - Un backend dédié
- */
-
+const STORAGE_KEY = 'universe_workspace_dropbox';
 const uploadedFiles = {
   map: [],
   addon: [],
@@ -15,108 +6,423 @@ const uploadedFiles = {
   misc: []
 };
 
+const dropboxState = {
+  token: '',
+  root: '/UniverseWorkspace',
+  connected: false,
+  accountName: '',
+  remoteFiles: []
+};
+
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / (1024 ** index);
+  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
-function renderFileList(type) {
-  const listEl = document.getElementById(`${type === 'texture' ? 'tex' : type}-list`);
-  if (!listEl) return;
+function formatDate(input) {
+  if (!input) return '-';
+  return new Date(input).toLocaleString('fr-FR');
+}
 
-  listEl.innerHTML = '';
-  uploadedFiles[type].forEach((file, index) => {
+function escapeHtml(value) {
+  const div = document.createElement('div');
+  div.textContent = value;
+  return div.innerHTML;
+}
+
+function inferType(name) {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.bsp') || lower.endsWith('.vmf')) return 'map';
+  if (lower.endsWith('.gma') || lower.endsWith('.lua')) return 'addon';
+  if (lower.endsWith('.vtf') || lower.endsWith('.vmt') || lower.endsWith('.png') || lower.endsWith('.psd')) return 'texture';
+  return 'misc';
+}
+
+function getLocalEntries() {
+  return Object.entries(uploadedFiles).flatMap(([type, files]) => files.map(file => ({ ...file, type })));
+}
+
+function setDropboxStatus(label, note = '') {
+  document.getElementById('dropbox-status').textContent = label;
+  document.getElementById('dropbox-identity').textContent = note;
+}
+
+function persistDropboxState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: dropboxState.token, root: dropboxState.root }));
+}
+
+function loadDropboxState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    dropboxState.token = parsed.token || '';
+    dropboxState.root = parsed.root || dropboxState.root;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
+async function dropboxRequest(endpoint, body, options = {}) {
+  const isContent = Boolean(options.content);
+  const url = isContent ? `https://content.dropboxapi.com/2/${endpoint}` : `https://api.dropboxapi.com/2/${endpoint}`;
+  const headers = { Authorization: `Bearer ${dropboxState.token}` };
+
+  let payload = null;
+  if (isContent) {
+    headers['Dropbox-API-Arg'] = JSON.stringify(body);
+    headers['Content-Type'] = 'application/octet-stream';
+    payload = options.content;
+  } else {
+    headers['Content-Type'] = 'application/json';
+    payload = JSON.stringify(body || {});
+  }
+
+  const response = await fetch(url, { method: 'POST', headers, body: payload });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `Dropbox request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function connectDropbox() {
+  const tokenInput = document.getElementById('dropbox-token');
+  const rootInput = document.getElementById('dropbox-root');
+  const configToken = window.siteConfig?.dropbox_access_token || '';
+  const token = tokenInput.value.trim() || configToken || dropboxState.token;
+  const root = rootInput.value.trim() || '/UniverseWorkspace';
+
+  if (!token) {
+    setDropboxStatus('Token manquant', 'Colle un access token Dropbox pour connecter le hub.');
+    return;
+  }
+
+  dropboxState.token = token;
+  dropboxState.root = root.startsWith('/') ? root : `/${root}`;
+
+  try {
+    const profile = await dropboxRequest('users/get_current_account', {});
+    dropboxState.connected = true;
+    dropboxState.accountName = profile.name.display_name;
+    persistDropboxState();
+    setDropboxStatus('Connecte', `${profile.name.display_name} - ${dropboxState.root}`);
+    await refreshDropboxFiles();
+  } catch (error) {
+    console.error(error);
+    dropboxState.connected = false;
+    dropboxState.remoteFiles = [];
+    setDropboxStatus('Connexion echouee', 'Le token Dropbox semble invalide ou expire.');
+    renderFileManager();
+  }
+}
+
+function disconnectDropbox() {
+  dropboxState.token = '';
+  dropboxState.connected = false;
+  dropboxState.accountName = '';
+  dropboxState.remoteFiles = [];
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('dropbox-token').value = '';
+  setDropboxStatus('Non connecte', 'Ajoute un token pour synchroniser.');
+  renderFileManager();
+}
+
+async function refreshDropboxFiles() {
+  if (!dropboxState.connected) {
+    renderFileManager();
+    return;
+  }
+
+  let cursor = null;
+  let hasMore = true;
+  const entries = [];
+
+  while (hasMore) {
+    const payload = cursor
+      ? await dropboxRequest('files/list_folder/continue', { cursor })
+      : await dropboxRequest('files/list_folder', {
+          path: dropboxState.root,
+          recursive: true,
+          include_deleted: false,
+          include_has_explicit_shared_members: false,
+          include_mounted_folders: true
+        });
+
+    payload.entries.forEach(entry => {
+      if (entry['.tag'] === 'file') {
+        entries.push({
+          id: entry.id,
+          name: entry.name,
+          size: entry.size,
+          type: inferType(entry.name),
+          source: 'dropbox',
+          updatedAt: entry.client_modified || entry.server_modified,
+          path: entry.path_display
+        });
+      }
+    });
+
+    cursor = payload.cursor;
+    hasMore = payload.has_more;
+  }
+
+  dropboxState.remoteFiles = entries.sort((a, b) => a.name.localeCompare(b.name));
+  renderFileManager();
+}
+
+function renderCategoryList(type) {
+  const targetId = type === 'texture' ? 'tex-list' : `${type}-list`;
+  const container = document.getElementById(targetId);
+  const files = uploadedFiles[type];
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (!files.length) {
+    container.innerHTML = '<div class="file-item"><span class="file-name">Aucun fichier</span><span class="file-size">-</span><span></span></div>';
+    return;
+  }
+
+  files.forEach((file, index) => {
     const item = document.createElement('div');
     item.className = 'file-item';
     item.innerHTML = `
-      <span class="file-name">📄 ${escapeHTML(file.name)}</span>
+      <span class="file-name">${escapeHtml(file.name)}</span>
       <span class="file-size">${formatBytes(file.size)}</span>
-      <button class="file-del" data-type="${type}" data-index="${index}" title="Supprimer">✕</button>
+      <button class="file-del" data-type="${type}" data-index="${index}" type="button">Suppr.</button>
     `;
-    listEl.appendChild(item);
+    container.appendChild(item);
   });
 
-  // Event listeners pour les boutons de suppression
-  listEl.querySelectorAll('.file-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const t = btn.dataset.type;
-      const i = parseInt(btn.dataset.index);
-      uploadedFiles[t].splice(i, 1);
-      renderFileList(t);
+  container.querySelectorAll('.file-del').forEach(button => {
+    button.addEventListener('click', () => {
+      uploadedFiles[button.dataset.type].splice(Number(button.dataset.index), 1);
+      renderCategoryList(button.dataset.type);
+      updateQueueSummary();
+      renderFileManager();
     });
   });
 }
 
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.appendChild(document.createTextNode(str));
-  return div.innerHTML;
+function updateQueueSummary() {
+  const total = getLocalEntries().length;
+  document.getElementById('queue-summary').textContent = total
+    ? `${total} fichier(s) local(aux) pret(s) a etre envoyes vers Dropbox.`
+    : 'Aucun fichier local pour le moment.';
 }
 
 function handleUpload(file, type) {
-  // Vérification taille
   const maxSize = type === 'misc' ? 50 * 1024 * 1024 : 100 * 1024 * 1024;
   if (file.size > maxSize) {
-    alert(`⚠️ Fichier trop volumineux !\nMax: ${formatBytes(maxSize)}\nFichier: ${formatBytes(file.size)}`);
+    alert(`Fichier trop volumineux: ${file.name}`);
     return;
   }
 
-  // Ajouter à la liste en mémoire
   uploadedFiles[type].push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     name: file.name,
     size: file.size,
-    type: file.type,
-    lastModified: file.lastModified,
-    // Pour vraiment stocker le fichier, vous pourriez envoyer via fetch() à une API ici
+    source: 'local',
+    updatedAt: new Date(file.lastModified || Date.now()).toISOString(),
+    blob: file
   });
 
-  renderFileList(type);
-
-  // Feedback visuel
-  const areaId = `${type === 'texture' ? 'tex' : type}-drop`;
-  const area = document.getElementById(areaId);
-  if (area) {
-    area.style.borderColor = '#39ff84';
-    area.style.background = 'rgba(57,255,132,0.05)';
-    setTimeout(() => {
-      area.style.borderColor = '';
-      area.style.background = '';
-    }, 1200);
-  }
+  renderCategoryList(type);
+  updateQueueSummary();
+  renderFileManager();
 }
 
 function initUploadArea(inputEl) {
   const type = inputEl.dataset.type;
-  const label = inputEl.closest('label');
+  const area = inputEl.closest('.upload-area');
 
-  // File input change
   inputEl.addEventListener('change', () => {
-    Array.from(inputEl.files).forEach(file => handleUpload(file, type));
-    inputEl.value = ''; // Reset pour permettre re-sélection
+    Array.from(inputEl.files || []).forEach(file => handleUpload(file, type));
+    inputEl.value = '';
   });
 
-  // Drag & drop
-  label.addEventListener('dragover', e => {
-    e.preventDefault();
-    label.classList.add('drag-over');
+  area.addEventListener('dragover', event => {
+    event.preventDefault();
+    area.classList.add('drag-over');
   });
 
-  label.addEventListener('dragleave', e => {
-    if (!label.contains(e.relatedTarget)) {
-      label.classList.remove('drag-over');
-    }
-  });
+  area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
 
-  label.addEventListener('drop', e => {
-    e.preventDefault();
-    label.classList.remove('drag-over');
-    Array.from(e.dataTransfer.files).forEach(file => handleUpload(file, type));
+  area.addEventListener('drop', event => {
+    event.preventDefault();
+    area.classList.remove('drag-over');
+    Array.from(event.dataTransfer.files || []).forEach(file => handleUpload(file, type));
   });
 }
 
+async function uploadSingleFileToDropbox(entry) {
+  if (!dropboxState.connected) throw new Error('Dropbox non connecte');
+  const targetPath = `${dropboxState.root}/${entry.type}/${entry.name}`.replace(/\/+/g, '/');
+  await dropboxRequest('files/upload', { path: targetPath, mode: 'overwrite', autorename: false, mute: true }, { content: entry.blob });
+}
+
+async function syncAllToDropbox() {
+  const localEntries = getLocalEntries();
+  if (!localEntries.length) {
+    setDropboxStatus(dropboxState.connected ? 'Connecte' : 'Non connecte', 'Aucun fichier local a envoyer.');
+    return;
+  }
+  if (!dropboxState.connected) {
+    setDropboxStatus('Connexion requise', 'Connecte Dropbox avant d envoyer la queue.');
+    return;
+  }
+
+  setDropboxStatus('Sync en cours', `Envoi de ${localEntries.length} fichier(s)...`);
+
+  try {
+    for (const entry of localEntries) {
+      await uploadSingleFileToDropbox(entry);
+    }
+
+    Object.keys(uploadedFiles).forEach(type => {
+      uploadedFiles[type] = [];
+      renderCategoryList(type);
+    });
+
+    updateQueueSummary();
+    await refreshDropboxFiles();
+    setDropboxStatus('Sync terminee', `${dropboxState.accountName} - ${dropboxState.root}`);
+  } catch (error) {
+    console.error(error);
+    setDropboxStatus('Erreur Dropbox', 'Un envoi a echoue. Verifie le token et les permissions.');
+  }
+}
+
+async function createDropboxShareLink(path) {
+  const existing = await dropboxRequest('sharing/list_shared_links', { path, direct_only: true });
+  if (existing.links?.length) return existing.links[0].url;
+  const created = await dropboxRequest('sharing/create_shared_link_with_settings', {
+    path,
+    settings: { requested_visibility: 'public' }
+  });
+  return created.url;
+}
+
+async function deleteDropboxFile(path) {
+  if (!dropboxState.connected) return;
+  await dropboxRequest('files/delete_v2', { path });
+  await refreshDropboxFiles();
+}
+
+function renderFileManager() {
+  const tbody = document.getElementById('file-manager-body');
+  if (!tbody) return;
+
+  const search = document.getElementById('manager-search')?.value?.trim().toLowerCase() || '';
+  const sourceFilter = document.getElementById('manager-source-filter')?.value || 'all';
+  const typeFilter = document.getElementById('manager-type-filter')?.value || 'all';
+  const localEntries = getLocalEntries();
+  const entries = [...localEntries, ...dropboxState.remoteFiles];
+
+  const filtered = entries.filter(entry => {
+    const matchesSource = sourceFilter === 'all' || sourceFilter === entry.source;
+    const matchesType = typeFilter === 'all' || typeFilter === entry.type;
+    const matchesSearch = !search || `${entry.name} ${entry.path || ''}`.toLowerCase().includes(search);
+    return matchesSource && matchesType && matchesSearch;
+  });
+
+  document.getElementById('manager-local-count').textContent = String(localEntries.length);
+  document.getElementById('manager-dropbox-count').textContent = String(dropboxState.remoteFiles.length);
+  document.getElementById('manager-visible-count').textContent = String(filtered.length);
+  document.getElementById('manager-total-count').textContent = String(entries.length);
+
+  tbody.innerHTML = '';
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Aucun fichier dans cette vue.</td></tr>';
+    return;
+  }
+
+  filtered.forEach(entry => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>
+        <div class="table-name">
+          <strong>${escapeHtml(entry.name)}</strong>
+          <span class="file-badge">${entry.path ? escapeHtml(entry.path) : 'Queue locale'}</span>
+        </div>
+      </td>
+      <td>${escapeHtml(entry.type)}</td>
+      <td>${entry.source === 'dropbox' ? 'Dropbox' : 'Local'}</td>
+      <td>${formatBytes(entry.size)}</td>
+      <td>${formatDate(entry.updatedAt)}</td>
+      <td>
+        <div class="file-actions">
+          ${entry.source === 'local'
+            ? `<button class="table-action" data-action="copy-name" data-name="${escapeHtml(entry.name)}" type="button">Copier nom</button>`
+            : `
+              <button class="table-action" data-action="copy-path" data-path="${escapeHtml(entry.path)}" type="button">Copier path</button>
+              <button class="table-action" data-action="share" data-path="${escapeHtml(entry.path)}" type="button">Lien</button>
+              <button class="table-action danger" data-action="delete-remote" data-path="${escapeHtml(entry.path)}" type="button">Supprimer</button>
+            `}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  tbody.querySelectorAll('.table-action').forEach(button => {
+    button.addEventListener('click', async () => {
+      const action = button.dataset.action;
+      try {
+        if (action === 'copy-name') copyText(button.dataset.name, button, 'Nom copie');
+        if (action === 'copy-path') copyText(button.dataset.path, button, 'Path copie');
+        if (action === 'share') copyText(await createDropboxShareLink(button.dataset.path), button, 'Lien copie');
+        if (action === 'delete-remote') await deleteDropboxFile(button.dataset.path);
+      } catch (error) {
+        console.error(error);
+        button.textContent = 'Erreur';
+      }
+    });
+  });
+}
+
+function clearLocalQueue() {
+  Object.keys(uploadedFiles).forEach(type => {
+    uploadedFiles[type] = [];
+    renderCategoryList(type);
+  });
+  updateQueueSummary();
+  renderFileManager();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  loadDropboxState();
+
+  document.getElementById('dropbox-token').value = window.siteConfig?.dropbox_access_token || dropboxState.token;
+  document.getElementById('dropbox-root').value = window.siteConfig?.dropbox_root_path || dropboxState.root;
+
   document.querySelectorAll('.file-input').forEach(initUploadArea);
+  ['map', 'addon', 'texture', 'misc'].forEach(renderCategoryList);
+  updateQueueSummary();
+  renderFileManager();
+
+  document.getElementById('dropbox-connect-btn').addEventListener('click', connectDropbox);
+  document.getElementById('dropbox-refresh-btn').addEventListener('click', refreshDropboxFiles);
+  document.getElementById('dropbox-disconnect-btn').addEventListener('click', disconnectDropbox);
+  document.getElementById('sync-all-btn').addEventListener('click', syncAllToDropbox);
+  document.getElementById('clear-local-btn').addEventListener('click', clearLocalQueue);
+  document.getElementById('manager-search').addEventListener('input', renderFileManager);
+  document.getElementById('manager-source-filter').addEventListener('change', renderFileManager);
+  document.getElementById('manager-type-filter').addEventListener('change', renderFileManager);
+
+  if (dropboxState.token) connectDropbox();
+});
+
+document.addEventListener('site-config-loaded', event => {
+  const config = event.detail || {};
+  const tokenInput = document.getElementById('dropbox-token');
+  const rootInput = document.getElementById('dropbox-root');
+  if (tokenInput && !tokenInput.value) tokenInput.value = config.dropbox_access_token || '';
+  if (rootInput && (!rootInput.value || rootInput.value === '/UniverseWorkspace')) {
+    rootInput.value = config.dropbox_root_path || '/UniverseWorkspace';
+  }
 });

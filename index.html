@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collège Universe — GMod</title>
+  <title>Universe Workspace - GMod Dev Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Oxanium:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-
-  <!-- ░░░ LOGIN SCREEN ░░░ -->
   <div id="login-screen">
     <div class="scanline"></div>
     <div class="login-noise"></div>
@@ -18,390 +17,307 @@
     <div class="login-box">
       <div class="login-logo">
         <div class="logo-hex">
-          <svg viewBox="0 0 100 115" width="80" height="92">
+          <svg viewBox="0 0 100 115" width="80" height="92" aria-hidden="true">
             <polygon points="50,5 95,28 95,87 50,110 5,87 5,28" fill="none" stroke="#00e5ff" stroke-width="2"/>
             <polygon points="50,15 85,33 85,82 50,100 15,82 15,33" fill="none" stroke="#00e5ff" stroke-width="0.8" opacity="0.4"/>
           </svg>
           <span class="hex-letter">CU</span>
         </div>
       </div>
-      <h1 class="login-title">COLLÈGE UNIVERSE</h1>
-      <p class="login-sub">Zone réservée aux membres</p>
+
+      <h1 class="login-title">UNIVERSE WORKSPACE</h1>
+      <p class="login-sub">Hub prive pour developper le serveur GMod</p>
 
       <div class="input-group">
         <label for="password">MOT DE PASSE</label>
         <div class="input-wrap">
-          <input type="password" id="password" placeholder="••••••••••" autocomplete="off" />
-          <button id="toggle-pw" type="button" aria-label="Voir mot de passe">👁</button>
+          <input type="password" id="password" placeholder="Entrez le mot de passe" autocomplete="off" />
+          <button id="toggle-pw" type="button" aria-label="Voir mot de passe">Voir</button>
         </div>
         <div class="input-bar"></div>
       </div>
 
       <button id="login-btn" class="btn-primary">
-        <span class="btn-text">ACCÉDER</span>
+        <span class="btn-text">ACCEDER</span>
         <span class="btn-glow"></span>
       </button>
 
       <div id="login-error" class="error-msg" aria-live="polite"></div>
 
       <div class="login-footer">
-        <span class="dot"></span> GMOD SERVER — EN LIGNE
+        <span class="dot"></span> DROPBOX + FILE MANAGER + RESSOURCES
         <span class="dot"></span>
       </div>
     </div>
   </div>
 
-  <!-- ░░░ MAIN SITE ░░░ -->
   <div id="main-site" class="hidden">
-
-    <!-- NAV -->
     <nav class="navbar">
       <div class="nav-brand">
         <div class="nav-hex">CU</div>
-        <span>COLLÈGE UNIVERSE</span>
+        <div>
+          <strong>UNIVERSE WORKSPACE</strong>
+          <span class="nav-meta">GMod development control room</span>
+        </div>
       </div>
+
       <ul class="nav-links">
-        <li><a href="#home" class="nav-link active">Accueil</a></li>
-        <li><a href="#upload" class="nav-link">Uploads</a></li>
-        <li><a href="#links" class="nav-link">Liens</a></li>
-        <li><a href="#server" class="nav-link">Serveur</a></li>
+        <li><a href="#upload" class="nav-link active">Uploads</a></li>
+        <li><a href="#files" class="nav-link">Fichiers</a></li>
+        <li><a href="#resources" class="nav-link">Ressources</a></li>
       </ul>
-      <button id="logout-btn" class="btn-logout">⏻ Déconnexion</button>
+
+      <button id="logout-btn" class="btn-logout">Deconnexion</button>
     </nav>
 
-    <!-- HOME -->
-    <section id="home" class="section hero-section">
-      <div class="hero-bg"></div>
-      <div class="grid-overlay"></div>
-      <div class="hero-content">
-        <div class="status-badge">
-          <span class="pulse-dot"></span> SERVEUR EN LIGNE
+    <section id="upload" class="section workspace-section">
+      <div class="section-header align-left">
+        <div>
+          <p class="section-kicker">Dev Hub</p>
+          <h1 class="workspace-title">Un seul espace pour uploader, trier et brancher Dropbox.</h1>
         </div>
-        <h1 class="hero-title">COLLÈGE<br/><span class="accent">UNIVERSE</span></h1>
-        <p class="hero-sub">Le serveur Garry's Mod de la communauté.<br/>Construis. Explore. Joue.</p>
-        <div class="server-card">
-          <div class="server-info">
-            <div class="info-row">
-              <span class="info-label">IP</span>
-              <span class="info-val" id="server-ip">node01.universe-gmod.fr</span>
-              <button class="copy-btn" type="button" data-copy-server>Copier</button>
+        <div class="workspace-badge">
+          <span class="pulse-dot"></span>
+          <span>100 liens verifies</span>
+        </div>
+      </div>
+
+      <div class="dashboard-strip">
+        <article class="stat-card">
+          <span class="stat-label">Adresse serveur</span>
+          <strong data-server-address>node01.universe-gmod.fr:25000</strong>
+          <button class="text-action" type="button" data-copy-server>Copier l'adresse</button>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Dropbox</span>
+          <strong id="dropbox-status">Non connecte</strong>
+          <span class="stat-note" id="dropbox-identity">Ajoute un token pour synchroniser.</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Fichiers detectes</span>
+          <strong id="manager-total-count">0</strong>
+          <span class="stat-note">Locaux + Dropbox</span>
+        </article>
+      </div>
+
+      <div class="upload-layout">
+        <div class="upload-cards">
+          <article class="upload-card">
+            <div class="upload-icon">MAP</div>
+            <h3>Maps</h3>
+            <p>.bsp, .vmf, .zip et archives de build.</p>
+            <label class="upload-area" id="map-drop">
+              <input type="file" accept=".bsp,.vmf,.zip" class="file-input" data-type="map" multiple />
+              <span class="drop-title">Glisse ou clique pour ajouter</span>
+              <span class="drop-hint">100 MB max par fichier</span>
+            </label>
+            <div class="file-list" id="map-list"></div>
+          </article>
+
+          <article class="upload-card">
+            <div class="upload-icon">LUA</div>
+            <h3>Addons</h3>
+            <p>Scripts Lua, modules, packs et .gma.</p>
+            <label class="upload-area" id="addon-drop">
+              <input type="file" accept=".zip,.gma,.lua" class="file-input" data-type="addon" multiple />
+              <span class="drop-title">Ajoute tes addons</span>
+              <span class="drop-hint">Archive ou fichier source</span>
+            </label>
+            <div class="file-list" id="addon-list"></div>
+          </article>
+
+          <article class="upload-card">
+            <div class="upload-icon">MAT</div>
+            <h3>Textures</h3>
+            <p>VTF, VMT, PSD, PNG et ressources visuelles.</p>
+            <label class="upload-area" id="tex-drop">
+              <input type="file" accept=".zip,.vtf,.vmt,.png,.psd" class="file-input" data-type="texture" multiple />
+              <span class="drop-title">Ajoute tes textures</span>
+              <span class="drop-hint">Jusqu'a 100 MB</span>
+            </label>
+            <div class="file-list" id="tex-list"></div>
+          </article>
+
+          <article class="upload-card">
+            <div class="upload-icon">CFG</div>
+            <h3>Configs</h3>
+            <p>JSON, TXT, docs, captures et fichiers divers.</p>
+            <label class="upload-area" id="misc-drop">
+              <input type="file" class="file-input" data-type="misc" multiple />
+              <span class="drop-title">Ajoute des fichiers annexes</span>
+              <span class="drop-hint">50 MB max recommande</span>
+            </label>
+            <div class="file-list" id="misc-list"></div>
+          </article>
+        </div>
+
+        <aside class="sidebar-stack">
+          <article class="panel-card">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Dropbox</p>
+                <h3>Connexion et sync</h3>
+              </div>
             </div>
-            <div class="info-row">
-              <span class="info-label">PORT</span>
-              <span class="info-val" id="server-port">25000</span>
+
+            <div class="stack-fields">
+              <label class="field">
+                <span>Access token Dropbox</span>
+                <input id="dropbox-token" type="password" placeholder="Colle un token court ou permanent" />
+              </label>
+
+              <label class="field">
+                <span>Dossier racine Dropbox</span>
+                <input id="dropbox-root" type="text" value="/UniverseWorkspace" />
+              </label>
             </div>
-          </div>
-        </div>
-        <a href="steam://connect/node01.universe-gmod.fr:25000" class="btn-primary btn-big" data-server-connect>
-          🎮 REJOINDRE LE SERVEUR
-        </a>
-        <div class="hero-actions">
-          <button class="btn-secondary" type="button" data-copy-server>COPIER node01.universe-gmod.fr:25000</button>
-        </div>
-        <p class="hero-note">Connexion directe Steam disponible via l'adresse <span data-server-address>node01.universe-gmod.fr:25000</span>.</p>
+
+            <div class="action-row">
+              <button id="dropbox-connect-btn" class="btn-primary" type="button">Connecter Dropbox</button>
+              <button id="dropbox-refresh-btn" class="btn-secondary" type="button">Actualiser</button>
+              <button id="dropbox-disconnect-btn" class="btn-secondary danger" type="button">Oublier</button>
+            </div>
+
+            <p class="panel-note">
+              Le site peut fonctionner sans backend via l'API Dropbox. Le token est stocke localement dans ton navigateur si tu cliques sur Connecter.
+            </p>
+          </article>
+
+          <article class="panel-card">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Queue</p>
+                <h3>Actions rapides</h3>
+              </div>
+            </div>
+
+            <div class="action-grid">
+              <button id="sync-all-btn" class="btn-primary" type="button">Envoyer toute la queue vers Dropbox</button>
+              <button id="clear-local-btn" class="btn-secondary" type="button">Vider la queue locale</button>
+            </div>
+
+            <p class="panel-note" id="queue-summary">
+              Aucun fichier local pour le moment.
+            </p>
+          </article>
+        </aside>
       </div>
     </section>
 
-    <!-- UPLOAD -->
-    <section id="upload" class="section upload-section">
+    <section id="files" class="section files-section">
       <div class="section-header">
-        <h2 class="section-title">📁 UPLOADS</h2>
-        <p class="section-sub">Partagez des addons, maps, et ressources pour le serveur</p>
+        <h2 class="section-title">Gestionnaire de fichiers</h2>
+        <p class="section-sub">Recherche locale + Dropbox, vues combinees et actions utiles.</p>
       </div>
 
-      <div class="upload-grid">
+      <div class="manager-toolbar">
+        <label class="toolbar-field">
+          <span>Recherche</span>
+          <input id="manager-search" type="search" placeholder="map, lua, wire, texture..." />
+        </label>
 
-        <div class="upload-card">
-          <div class="upload-icon">🗺️</div>
-          <h3>Maps</h3>
-          <p>Upload une map (.bsp) pour le serveur GMod</p>
-          <label class="upload-area" id="map-drop">
-            <input type="file" accept=".bsp,.zip" class="file-input" data-type="map" />
-            <div class="drop-content">
-              <span class="drop-icon">⬆️</span>
-              <span>Glisse ou clique pour uploader</span>
-              <span class="drop-hint">.bsp, .zip — max 100MB</span>
-            </div>
-          </label>
-          <div class="file-list" id="map-list"></div>
-        </div>
+        <label class="toolbar-field small">
+          <span>Source</span>
+          <select id="manager-source-filter">
+            <option value="all">Toutes</option>
+            <option value="local">Local</option>
+            <option value="dropbox">Dropbox</option>
+          </select>
+        </label>
 
-        <div class="upload-card">
-          <div class="upload-icon">🔧</div>
-          <h3>Addons</h3>
-          <p>Addons Lua, props, ou packs de contenu</p>
-          <label class="upload-area" id="addon-drop">
-            <input type="file" accept=".zip,.gma" class="file-input" data-type="addon" />
-            <div class="drop-content">
-              <span class="drop-icon">⬆️</span>
-              <span>Glisse ou clique pour uploader</span>
-              <span class="drop-hint">.zip, .gma — max 100MB</span>
-            </div>
-          </label>
-          <div class="file-list" id="addon-list"></div>
-        </div>
-
-        <div class="upload-card">
-          <div class="upload-icon">🖼️</div>
-          <h3>Textures & Materials</h3>
-          <p>Packs de textures VTF/VMT</p>
-          <label class="upload-area" id="tex-drop">
-            <input type="file" accept=".zip,.vtf,.vmt" class="file-input" data-type="texture" />
-            <div class="drop-content">
-              <span class="drop-icon">⬆️</span>
-              <span>Glisse ou clique pour uploader</span>
-              <span class="drop-hint">.zip, .vtf, .vmt — max 100MB</span>
-            </div>
-          </label>
-          <div class="file-list" id="tex-list"></div>
-        </div>
-
-        <div class="upload-card">
-          <div class="upload-icon">📄</div>
-          <h3>Autres fichiers</h3>
-          <p>Configs, scripts, documentation</p>
-          <label class="upload-area" id="misc-drop">
-            <input type="file" class="file-input" data-type="misc" />
-            <div class="drop-content">
-              <span class="drop-icon">⬆️</span>
-              <span>Glisse ou clique pour uploader</span>
-              <span class="drop-hint">Tout format — max 50MB</span>
-            </div>
-          </label>
-          <div class="file-list" id="misc-list"></div>
-        </div>
-
+        <label class="toolbar-field small">
+          <span>Type</span>
+          <select id="manager-type-filter">
+            <option value="all">Tous</option>
+            <option value="map">Maps</option>
+            <option value="addon">Addons</option>
+            <option value="texture">Textures</option>
+            <option value="misc">Configs</option>
+          </select>
+        </label>
       </div>
 
-      <div class="upload-note">
-        <span>⚠️</span>
-        <p>Les fichiers sont stockés localement dans votre navigateur. Pour un vrai partage, configurez un service externe (Google Drive, Dropbox) dans <code>assets/js/upload.js</code>.</p>
+      <div class="manager-summaries">
+        <article class="mini-card">
+          <span>Locaux</span>
+          <strong id="manager-local-count">0</strong>
+        </article>
+        <article class="mini-card">
+          <span>Dropbox</span>
+          <strong id="manager-dropbox-count">0</strong>
+        </article>
+        <article class="mini-card">
+          <span>Selection visible</span>
+          <strong id="manager-visible-count">0</strong>
+        </article>
+      </div>
+
+      <div class="manager-table-wrap">
+        <table class="manager-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Type</th>
+              <th>Source</th>
+              <th>Taille</th>
+              <th>Modifie</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="file-manager-body">
+            <tr>
+              <td colspan="6" class="empty-cell">Aucun fichier pour le moment.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
-    <!-- LINKS -->
-    <section id="links" class="section links-section">
+    <section id="resources" class="section resources-section">
       <div class="section-header">
-        <h2 class="section-title">🔗 LIENS UTILES</h2>
-        <p class="section-sub">Tous les outils essentiels pour le développement et le jeu</p>
+        <h2 class="section-title">Bibliotheque de ressources</h2>
+        <p class="section-sub">
+          100 liens verifies HTTP 200 pour coder, mapper, debugguer et organiser le serveur.
+        </p>
       </div>
 
-      <div class="links-grid">
+      <div class="resource-controls">
+        <label class="toolbar-field">
+          <span>Recherche de liens</span>
+          <input id="resource-search" type="search" placeholder="derma, hammer, dropbox, lua..." />
+        </label>
 
-        <div class="link-category">
-          <h3 class="cat-title">🛠️ Outils de mapping</h3>
-          <div class="link-cards">
-            <a href="https://ficool2.github.io/HammerAddons-website/hammer_pp.html" target="_blank" class="link-card featured">
-              <div class="lc-icon">🔨</div>
-              <div class="lc-info">
-                <strong>Hammer++</strong>
-                <span>Éditeur de maps amélioré — indispensable</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://developer.valvesoftware.com/wiki/Hammer_Editor" target="_blank" class="link-card">
-              <div class="lc-icon">📖</div>
-              <div class="lc-info">
-                <strong>Hammer Wiki (Valve)</strong>
-                <span>Documentation officielle de Hammer</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://ficool2.github.io/HammerAddons-website/" target="_blank" class="link-card">
-              <div class="lc-icon">➕</div>
-              <div class="lc-info">
-                <strong>Hammer Addons</strong>
-                <span>Extensions pour Hammer / BSPEdit</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://www.tophattwaffle.com/compiling-vmf/" target="_blank" class="link-card">
-              <div class="lc-icon">⚙️</div>
-              <div class="lc-info">
-                <strong>Guide de compilation</strong>
-                <span>Compiler une map correctement</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-          </div>
-        </div>
+        <label class="toolbar-field small">
+          <span>Categorie</span>
+          <select id="resource-category-filter">
+            <option value="all">Toutes</option>
+          </select>
+        </label>
 
-        <div class="link-category">
-          <h3 class="cat-title">🎮 Garry's Mod</h3>
-          <div class="link-cards">
-            <a href="https://wiki.facepunch.com/gmod/" target="_blank" class="link-card featured">
-              <div class="lc-icon">📚</div>
-              <div class="lc-info">
-                <strong>Wiki GMod (Facepunch)</strong>
-                <span>Documentation officielle Lua/GMod</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://steamcommunity.com/app/4000/workshop/" target="_blank" class="link-card">
-              <div class="lc-icon">🏪</div>
-              <div class="lc-info">
-                <strong>Steam Workshop</strong>
-                <span>Addons communautaires GMod</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://www.gmodstore.com/" target="_blank" class="link-card">
-              <div class="lc-icon">💾</div>
-              <div class="lc-info">
-                <strong>GmodStore</strong>
-                <span>Addons premium et scripts Lua</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://github.com/garrynewman/garrysmod" target="_blank" class="link-card">
-              <div class="lc-icon">🐙</div>
-              <div class="lc-info">
-                <strong>GMod GitHub</strong>
-                <span>Source officielle de Garry's Mod</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-          </div>
-        </div>
-
-        <div class="link-category">
-          <h3 class="cat-title">🖼️ Assets & Textures</h3>
-          <div class="link-cards">
-            <a href="https://www.textures.com/" target="_blank" class="link-card">
-              <div class="lc-icon">🎨</div>
-              <div class="lc-info">
-                <strong>Textures.com</strong>
-                <span>Bibliothèque de textures gratuite</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://ambientcg.com/" target="_blank" class="link-card featured">
-              <div class="lc-icon">✨</div>
-              <div class="lc-info">
-                <strong>AmbientCG</strong>
-                <span>Textures PBR libres de droits</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://developer.valvesoftware.com/wiki/VTFEdit" target="_blank" class="link-card">
-              <div class="lc-icon">🖼️</div>
-              <div class="lc-info">
-                <strong>VTFEdit</strong>
-                <span>Convertisseur de textures VTF/VMT</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-          </div>
-        </div>
-
-        <div class="link-category">
-          <h3 class="cat-title">🤝 Communauté</h3>
-          <div class="link-cards">
-            <a href="https://discord.gg/" target="_blank" class="link-card featured" id="discord-link">
-              <div class="lc-icon">💬</div>
-              <div class="lc-info">
-                <strong>Discord Collège Universe</strong>
-                <span>Rejoins notre serveur Discord</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://steamcommunity.com/" target="_blank" class="link-card" id="steam-group">
-              <div class="lc-icon">🎮</div>
-              <div class="lc-info">
-                <strong>Groupe Steam</strong>
-                <span>Groupe officiel de la communauté</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-            <a href="https://facepunch.com/forum" target="_blank" class="link-card">
-              <div class="lc-icon">💡</div>
-              <div class="lc-info">
-                <strong>Forum Facepunch</strong>
-                <span>Aide et discussion sur GMod</span>
-              </div>
-              <div class="lc-arrow">→</div>
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- SERVER -->
-    <section id="server" class="section server-section">
-      <div class="section-header">
-        <h2 class="section-title">🖥️ SERVEUR</h2>
-        <p class="section-sub">Informations et règles du serveur</p>
-      </div>
-
-      <div class="server-grid">
-        <div class="server-details-card">
-          <h3>Connexion</h3>
-          <div class="detail-row">
-            <span>IP</span><code id="s-ip">node01.universe-gmod.fr</code>
-          </div>
-          <div class="detail-row">
-            <span>Port</span><code id="s-port">25000</code>
-          </div>
-          <div class="detail-row">
-            <span>Adresse</span><code data-server-address>node01.universe-gmod.fr:25000</code>
-          </div>
-          <div class="detail-row">
-            <span>Jeu</span><code>Garry's Mod</code>
-          </div>
-          <div class="detail-row">
-            <span>Statut</span><code class="green">En ligne ✓</code>
-          </div>
-          <a href="steam://connect/node01.universe-gmod.fr:25000" class="btn-primary" style="margin-top:1.5rem;display:block;text-align:center;" data-server-connect>
-            🎮 Rejoindre
-          </a>
-          <div class="server-actions">
-            <button class="btn-secondary" type="button" data-copy-server>COPIER L'ADRESSE</button>
-          </div>
-          <p class="server-note">Si Steam ne s'ouvre pas automatiquement, lance Garry's Mod puis connecte-toi a <code data-server-address>node01.universe-gmod.fr:25000</code>.</p>
-        </div>
-
-        <div class="rules-card">
-          <h3>📋 Règles du serveur</h3>
-          <ol class="rules-list">
-            <li>Respecter tous les joueurs — aucune discrimination tolérée</li>
-            <li>Pas de grief ni de destruction intentionnelle des constructions</li>
-            <li>Pas de cheats, exploits ou hacks</li>
-            <li>Écouter les admins et modérateurs</li>
-            <li>Rester dans le thème du serveur</li>
-            <li>Pas de spam vocal ni textuel</li>
-          </ol>
-        </div>
-
-        <div class="addons-card">
-          <h3>🔧 Addons requis</h3>
-          <p class="addons-sub">Abonne-toi à ces addons sur le Workshop pour jouer sans erreurs :</p>
-          <ul class="addons-list">
-            <li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=163057105" target="_blank">ULX Admin Mod</a></li>
-            <li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=104534948" target="_blank">Wiremod</a></li>
-            <li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=11520" target="_blank">PHX3</a></li>
-          </ul>
-          <p class="addons-note">⬆️ Modifie cette liste dans <code>index.html</code></p>
+        <div class="resource-total">
+          <span>Liens affiches</span>
+          <strong id="resource-visible-count">0</strong>
         </div>
       </div>
+
+      <div id="resource-groups" class="resource-groups"></div>
     </section>
 
     <footer class="footer">
       <div class="footer-content">
-        <div class="footer-brand">COLLÈGE UNIVERSE</div>
+        <div class="footer-brand">UNIVERSE WORKSPACE</div>
         <div class="footer-links">
-          <a href="#home">Accueil</a>
           <a href="#upload">Uploads</a>
-          <a href="#links">Liens</a>
-          <a href="#server">Serveur</a>
+          <a href="#files">Fichiers</a>
+          <a href="#resources">Ressources</a>
         </div>
-        <div class="footer-copy">© 2025 Collège Universe — Tous droits réservés</div>
+        <div class="footer-copy">© <span id="current-year">2026</span> Universe Workspace</div>
       </div>
     </footer>
-
   </div>
 
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/resources.js"></script>
   <script src="assets/js/upload.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
